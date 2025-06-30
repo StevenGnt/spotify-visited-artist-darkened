@@ -1,8 +1,8 @@
 # About
 
-This script darkens the tiles of artists whose Spotify page you alreardy visited (web version).
+This script darkens the tiles of artists whose Spotify (web) page you already visited.
 
-It **only works once you've installed the script**, and it resets when you clear the Spotify data (namely, the local storage).
+It **only works once you've installed the script**, and it **resets when you clear the Spotify browser data** (namely, the local storage).
 
 # How to install
 
@@ -11,6 +11,7 @@ It **only works once you've installed the script**, and it resets when you clear
 3. You're done.
 
 # Install example
+
 With Tampermonkey
 1. Open the extension's menu in the browser
 2. "Create a script"
