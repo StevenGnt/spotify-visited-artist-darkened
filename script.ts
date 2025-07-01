@@ -15,6 +15,7 @@
     const VENDOR = 'SG';
     const LS_KEY_SCRIPT = `${VENDOR}_visitedSpotifyArtists`;
     const CLASS_NAME = `${VENDOR}_visited-artist`;
+    const DEBOUNCE_RATE = 100;
 
     const api = {
         getVisitedArtists: () => JSON.parse(localStorage.getItem(LS_KEY_SCRIPT) || '[]'),
@@ -65,10 +66,13 @@
         };
     }
 
-    function runScript() {
-        detectArtistPage();
-        hideVisitedArtists();
-    }
+    const runScript = debounce(
+        () => {
+            detectArtistPage();
+            hideVisitedArtists();
+        },
+        DEBOUNCE_RATE
+    );
 
     // Create global CSS class for seen artists cards
     const scriptSheet = new CSSStyleSheet();
@@ -81,7 +85,7 @@
     document.adoptedStyleSheets = [scriptSheet];
 
     // Watch for page changes
-    const observer = new MutationObserver(debounce(runScript, 200));
+    const observer = new MutationObserver(runScript);
     observer.observe(document.body, { childList: true, subtree: true });
 
     // Also run on first load
