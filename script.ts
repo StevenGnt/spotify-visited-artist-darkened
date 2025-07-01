@@ -17,17 +17,25 @@
     const CLASS_NAME = `${VENDOR}_visited-artist`;
     const DEBOUNCE_RATE = 100;
 
-    const api = {
-        getVisitedArtists: () => JSON.parse(localStorage.getItem(LS_KEY_SCRIPT) || '[]'),
-        saveVisitedArtist: (id) => {
-            const visited = new Set(api.getVisitedArtists());
+    const visitedArtists = {
+        get: () => {
+            const visited = JSON.parse(localStorage.getItem(LS_KEY_SCRIPT) || '[]');
+            return new Set(visited);
+        },
+        set: (id) => {
+            const visited = visitedArtists.get();
             visited.add(id);
-            localStorage.setItem(LS_KEY_SCRIPT, JSON.stringify([...visited]));
+            try {
+                localStorage.setItem(LS_KEY_SCRIPT, JSON.stringify([...visited]));
+
+            } catch (e) {
+                console.log(VENDOR, 'Failed storing visited artist:', e);
+            }
         },
     };
 
-    const hideVisitedArtists = () => {
-        const visited = new Set(api.getVisitedArtists());
+    const processUI = () => {
+        const visited = visitedArtists.get();
 
         const cards = document.querySelectorAll('[data-testid="grid-container"] > [aria-labelledby^="card-title-spotify:artist:"]');
 
@@ -53,7 +61,7 @@
             const artistId = pathnameSections[artistPathIndex + 1];
 
             if (artistId) {
-                api.saveVisitedArtist(artistId);
+                visitedArtists.set(artistId);
             }
         }
     };
@@ -69,7 +77,7 @@
     const runScript = debounce(
         () => {
             detectArtistPage();
-            hideVisitedArtists();
+            processUI();
         },
         DEBOUNCE_RATE
     );
