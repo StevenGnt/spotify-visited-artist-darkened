@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Darken visited artists Spotify page
 // @namespace    http://tampermonkey.net/
-// @version      2025-06-30
+// @version      1.0.2
 // @description  Darken visited artists Spotify page
 // @author       Steven Gangnant
 // @match        https://open.spotify.com/*
