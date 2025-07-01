@@ -17,18 +17,10 @@
     const CLASS_NAME = `${VENDOR}_visited-artist`;
     const DEBOUNCE_RATE = 100;
 
-    const api = {
-        getVisitedArtists: () => JSON.parse(localStorage.getItem(LS_KEY_SCRIPT) || '[]'),
-        saveVisitedArtist: (id) => {
-            const visited = new Set(api.getVisitedArtists());
-            visited.add(id);
-            localStorage.setItem(LS_KEY_SCRIPT, JSON.stringify([...visited]));
-        },
-    };
+    // Initialize Set with data from LS
+    const visitedArtists = new Set(JSON.parse(localStorage.getItem(LS_KEY_SCRIPT) || '[]'));
 
     const hideVisitedArtists = () => {
-        const visited = new Set(api.getVisitedArtists());
-
         const cards = document.querySelectorAll('[data-testid="grid-container"] > [aria-labelledby^="card-title-spotify:artist:"]');
 
         cards.forEach(card => {
@@ -37,7 +29,7 @@
             // "Split on -" because there's an ending appendix on the ID with the card's index in the parent element
             const cardArtistId = labelledBy?.split(':')[2].split('-')[0];
 
-            if (visited.has(cardArtistId)) {
+            if (visitedArtists.has(cardArtistId)) {
                 card.classList.add(CLASS_NAME);
             }
         });
@@ -53,7 +45,9 @@
             const artistId = pathnameSections[artistPathIndex + 1];
 
             if (artistId) {
-                api.saveVisitedArtist(artistId);
+                // Add artist ID to live Set + LS
+                visitedArtists.add(artistId);
+                localStorage.setItem(LS_KEY_SCRIPT, JSON.stringify([...visitedArtists]));
             }
         }
     };
