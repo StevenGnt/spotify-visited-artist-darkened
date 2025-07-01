@@ -16,4 +16,4 @@ With Tampermonkey
 1. Open the extension's menu in the browser
 2. "Create a script"
 3. Replace the content of the editor with the content from `script.ts` and save it
-4. Ensure that the script is enabled.
+4. Ensure that the script is enabled and that the extension has the right pemissions to run (see [Tampermonkey's FAQ](https://www.tampermonkey.net/faq.php#Q209)).

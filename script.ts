@@ -14,7 +14,7 @@
 
     const VENDOR = 'SG';
     const LS_KEY_SCRIPT = `${VENDOR}_visitedSpotifyArtists`;
-    const VISITED_OPACITY = '0.3';
+    const CLASS_NAME = `${VENDOR}_visited-artist`;
 
     const api = {
         getVisitedArtists: () => JSON.parse(localStorage.getItem(LS_KEY_SCRIPT) || '[]'),
@@ -37,7 +37,7 @@
             const cardArtistId = labelledBy?.split(':')[2].split('-')[0];
 
             if (visited.has(cardArtistId)) {
-                card.style.opacity = VISITED_OPACITY;
+                card.classList.add(CLASS_NAME);
             }
         });
     };
@@ -69,6 +69,16 @@
         detectArtistPage();
         hideVisitedArtists();
     }
+
+    // Create global CSS class for seen artists cards
+    const scriptSheet = new CSSStyleSheet();
+    scriptSheet.replaceSync(`
+        .${CLASS_NAME} {
+            transition: opacity 0.2s ease-in-out;
+            opacity: 0.1;
+        }
+    `);
+    document.adoptedStyleSheets = [scriptSheet];
 
     // Watch for page changes
     const observer = new MutationObserver(debounce(runScript, 200));
