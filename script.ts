@@ -15,6 +15,12 @@
     const VENDOR = 'SG';
     const LS_KEY_SCRIPT = `${VENDOR}_visitedSpotifyArtists`;
     const CLASS_NAME = `${VENDOR}_visited-artist`;
+    const INLINE_CSS = `
+        .${CLASS_NAME} {
+            transition: opacity 0.2s ease-in-out;
+            opacity: 0.2;
+        }
+    `;
     const DEBOUNCE_RATE = 100;
 
     const visitedArtists = {
@@ -83,12 +89,7 @@
 
     // Create global CSS class for seen artists cards
     const scriptSheet = new CSSStyleSheet();
-    scriptSheet.replaceSync(`
-        .${CLASS_NAME} {
-            transition: opacity 0.2s ease-in-out;
-            opacity: 0.1;
-        }
-    `);
+    scriptSheet.replaceSync(INLINE_CSS);
     document.adoptedStyleSheets = [scriptSheet];
 
     // Watch for page changes
