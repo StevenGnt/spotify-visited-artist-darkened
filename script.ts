@@ -27,9 +27,8 @@
             visited.add(id);
             try {
                 localStorage.setItem(LS_KEY_SCRIPT, JSON.stringify([...visited]));
-
             } catch (e) {
-                console.log(VENDOR, 'Failed storing visited artist:', e);
+                console.error(VENDOR, 'Failed storing visited artist:', e);
             }
         },
     };
