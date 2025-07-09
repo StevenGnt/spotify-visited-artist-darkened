@@ -1,13 +1,15 @@
 // ==UserScript==
 // @name         Darken visited artists Spotify page
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @description  Darken visited artists Spotify page
 // @author       Steven Gangnant
 // @match        https://open.spotify.com/*
 // @icon         https://open.spotifycdn.com/cdn/images/favicon16.1c487bff.png
 // @grant        none
 // ==/UserScript==
+
+// @todo Re order elements
 
 (function () {
     'use strict';
@@ -16,7 +18,7 @@
     const LS_KEY_SCRIPT = `${VENDOR}_visitedSpotifyArtists`;
     const CLASS_NAME = `${VENDOR}_visited-artist`;
     const INLINE_CSS = `
-        .${CLASS_NAME} {
+        .${CLASS_NAME}:not(:hover) {
             transition: opacity 0.2s ease-in-out;
             opacity: 0.2;
         }
