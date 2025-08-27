@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Darken visited artists Spotify page
 // @namespace    http://tampermonkey.net/
-// @version      1.0.3
-// @description  Darken visited artists Spotify page
+// @version      1.0.4
+// @description  Darken visited artists on Spotify
 // @author       Steven Gangnant
 // @match        https://open.spotify.com/*
 // @icon         https://open.spotifycdn.com/cdn/images/favicon16.1c487bff.png
@@ -16,9 +16,12 @@
 
     const VENDOR = 'SG';
     const LS_KEY_SCRIPT = `${VENDOR}_visitedSpotifyArtists`;
-    const CLASS_NAME = `${VENDOR}_visited-artist`;
+    const BASE_CLASS_NAME = `${VENDOR}_visited-artist`;
+    const CARD_VISITED_CLASSNAME = `${BASE_CLASS_NAME}__card`;
+    const PLAYLIST_ROW_VISITED_CLASSNAME = `${BASE_CLASS_NAME}__card`;
     const INLINE_CSS = `
-        .${CLASS_NAME}:not(:hover) {
+        .${CARD_VISITED_CLASSNAME}:not(:hover),
+        .${PLAYLIST_ROW_VISITED_CLASSNAME}:not(:hover) {
             transition: opacity 0.2s ease-in-out;
             opacity: 0.2;
         }
@@ -41,11 +44,10 @@
         },
     };
 
-    const processUI = () => {
-        const visited = visitedArtists.get();
+    const processArtistsCards = visited => {
+        const cards = document.querySelectorAll('[aria-labelledby^="card-title-spotify:artist:"]');
 
-        const cards = document.querySelectorAll('[data-testid="grid-container"] > [aria-labelledby^="card-title-spotify:artist:"]');
-
+        // Darken artists cards
         cards.forEach(card => {
             const labelledBy = card.getAttribute('aria-labelledby');
             // "Split on :" because of the way attribute is built
@@ -53,9 +55,45 @@
             const cardArtistId = labelledBy?.split(':')[2].split('-')[0];
 
             if (visited.has(cardArtistId)) {
-                card.classList.add(CLASS_NAME);
+                card.classList.add(CARD_VISITED_CLASSNAME);
             }
         });
+    }
+
+    const processPlaylist = visited => {
+        const tracklistRows = document.querySelectorAll('[data-testid="tracklist-row"]');
+
+        tracklistRows.forEach(tracklistRow => {
+            const artistsPageLink = tracklistRow.querySelectorAll('a[href*="artist"]');
+
+            const visitedAll = [...artistsPageLink].reduce(
+                (acc, artistPageLink) => {
+                    const artistId = artistPageLink.getAttribute('href')?.split('/').pop();
+                    return acc && visited.has(artistId);
+                },
+                true
+            );
+
+            if (visitedAll) {
+                tracklistRow.classList.add(PLAYLIST_ROW_VISITED_CLASSNAME);
+            }
+        });
+    }
+
+    const isArtistPage = () => location.pathname.includes('/artist/');
+    const isRelatedArtistsPage = () => location.pathname.endsWith('/related');
+    const isPlaylistPage = () => location.pathname.includes('/playlist/');
+
+    const processUI = () => {
+        const visited = visitedArtists.get();
+
+        if (isArtistPage() || isRelatedArtistsPage()) {
+            processArtistsCards(visited);
+        }
+
+        if (isPlaylistPage()) {
+            processPlaylist(visited);
+        }
     };
 
     // Store the artist ID when navigating to an artist page
