@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Darken visited artists Spotify page
 // @namespace    http://tampermonkey.net/
-// @version      1.0.4
+// @version      1.0.5
 // @description  Darken visited artists on Spotify
 // @author       Steven Gangnant
 // @match        https://open.spotify.com/*
@@ -29,6 +29,9 @@
     `;
     const DOUBLE_TAP_DELAY = 300;
     const DEBOUNCE_RATE = 100;
+
+    // State
+    let scriptPaused = false;
 
     const visitedArtists = {
         get: () => {
@@ -87,14 +90,16 @@
     const isPlaylistPage = () => location.pathname.includes('/playlist/');
 
     const processUI = () => {
-        const visited = visitedArtists.get();
+        if (!scriptPaused) {
+            const visited = visitedArtists.get();
 
-        if (isArtistPage() || isRelatedArtistsPage()) {
-            processArtistsCards(visited);
-        }
+            if (isArtistPage() || isRelatedArtistsPage()) {
+                processArtistsCards(visited);
+            }
 
-        if (isPlaylistPage()) {
-            processPlaylist(visited);
+            if (isPlaylistPage()) {
+                processPlaylist(visited);
+            }
         }
     };
 
@@ -134,6 +139,8 @@
         getDimmedElements().forEach(element => {
             element.classList.remove(PAUSED_CLASSNAME);
         });
+
+        processUI();
     }
 
     function debounce(fn, delay = 100) {
@@ -163,8 +170,6 @@
 
     // Manage script pause
     let lastTapTime = 0;
-    let scriptPaused = false;
-
     document.addEventListener('keydown', (e) => {
         if (['ControlLeft', 'ControlRight'].includes(e.code)) {
             const now = Date.now();
