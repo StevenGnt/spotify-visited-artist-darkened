@@ -16,13 +16,13 @@
 
     const VENDOR = 'SG';
     const LS_KEY_SCRIPT = `${VENDOR}_visitedSpotifyArtists`;
-    const PAUSED_CLASSNAME = `${VENDOR}_visited-artist`;
     const BASE_CLASSNAME = `${VENDOR}_visited-artist`;
     const CARD_VISITED_CLASSNAME = `${BASE_CLASSNAME}__card`;
     const PLAYLIST_ROW_VISITED_CLASSNAME = `${BASE_CLASSNAME}__card`;
+    const ALL_DIMMED_CLASSES = [CARD_VISITED_CLASSNAME, PLAYLIST_ROW_VISITED_CLASSNAME];
     const INLINE_CSS = `
-        .${CARD_VISITED_CLASSNAME}:not(:hover):not(.${PAUSED_CLASSNAME}),
-        .${PLAYLIST_ROW_VISITED_CLASSNAME}:not(:hover):not(.${PAUSED_CLASSNAME}) {
+        .${CARD_VISITED_CLASSNAME}:not(:hover),
+        .${PLAYLIST_ROW_VISITED_CLASSNAME}:not(:hover){
             transition: opacity 0.2s ease-in-out;
             opacity: 0.2;
         }
@@ -126,17 +126,19 @@
         );
     }
 
+    /**
+     * Suspend dimming - remove any dimming class
+     */
     function suspendDim() {
         getDimmedElements().forEach(element => {
-            element.classList.add(PAUSED_CLASSNAME);
+            element.classList.remove(...ALL_DIMMED_CLASSES);
         });
     }
 
+    /**
+     * Resume dimming - retrigger UI processing
+     */
     function resumeDim() {
-        getDimmedElements().forEach(element => {
-            element.classList.remove(PAUSED_CLASSNAME);
-        });
-
         processUI();
     }
 
@@ -174,8 +176,10 @@
             if (now - lastTapTime < DOUBLE_TAP_DELAY) {
                 scriptPaused = !scriptPaused;
                 if (scriptPaused) {
+                    console.log('[SG]', 'suspend',);
                     suspendDim();
                 } else {
+                    console.log('[SG]', 'resuy',);
                     resumeDim();
                 }
             }
