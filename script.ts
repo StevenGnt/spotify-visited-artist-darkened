@@ -16,16 +16,18 @@
 
     const VENDOR = 'SG';
     const LS_KEY_SCRIPT = `${VENDOR}_visitedSpotifyArtists`;
-    const BASE_CLASS_NAME = `${VENDOR}_visited-artist`;
-    const CARD_VISITED_CLASSNAME = `${BASE_CLASS_NAME}__card`;
-    const PLAYLIST_ROW_VISITED_CLASSNAME = `${BASE_CLASS_NAME}__card`;
+    const PAUSED_CLASSNAME = `${VENDOR}_visited-artist`;
+    const BASE_CLASSNAME = `${VENDOR}_visited-artist`;
+    const CARD_VISITED_CLASSNAME = `${BASE_CLASSNAME}__card`;
+    const PLAYLIST_ROW_VISITED_CLASSNAME = `${BASE_CLASSNAME}__card`;
     const INLINE_CSS = `
-        .${CARD_VISITED_CLASSNAME}:not(:hover),
-        .${PLAYLIST_ROW_VISITED_CLASSNAME}:not(:hover) {
+        .${CARD_VISITED_CLASSNAME}:not(:hover):not(.${PAUSED_CLASSNAME}),
+        .${PLAYLIST_ROW_VISITED_CLASSNAME}:not(:hover):not(.${PAUSED_CLASSNAME}) {
             transition: opacity 0.2s ease-in-out;
             opacity: 0.2;
         }
     `;
+    const DOUBLE_TAP_DELAY = 300;
     const DEBOUNCE_RATE = 100;
 
     const visitedArtists = {
@@ -111,7 +113,30 @@
         }
     };
 
-    function debounce(fn, delay) {
+    function getDimmedElements() {
+        const classnames = [
+            CARD_VISITED_CLASSNAME,
+            PLAYLIST_ROW_VISITED_CLASSNAME,
+        ];
+
+        const selector = classnames.map(classname => `.${classname}`).join(', ');
+
+        return document.querySelectorAll(selector);
+    }
+
+    function suspendDim() {
+        getDimmedElements().forEach(element => {
+            element.classList.add(PAUSED_CLASSNAME);
+        });
+    }
+
+    function resumeDim() {
+        getDimmedElements().forEach(element => {
+            element.classList.remove(PAUSED_CLASSNAME);
+        });
+    }
+
+    function debounce(fn, delay = 100) {
         let timeout;
         return (...args) => {
             clearTimeout(timeout);
@@ -135,6 +160,27 @@
     // Watch for page changes
     const observer = new MutationObserver(runScript);
     observer.observe(document.body, { childList: true, subtree: true });
+
+    // Manage script pause
+    let lastTapTime = 0;
+    let scriptPaused = false;
+
+    document.addEventListener('keydown', (e) => {
+        if (['ControlLeft', 'ControlRight'].includes(e.code)) {
+            const now = Date.now();
+
+            if (now - lastTapTime < DOUBLE_TAP_DELAY) {
+                scriptPaused = !scriptPaused;
+                if (scriptPaused) {
+                    suspendDim();
+                } else {
+                    resumeDim();
+                }
+            }
+
+            lastTapTime = now;
+        }
+    });
 
     // Also run on first load
     runScript();
