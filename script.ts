@@ -16,13 +16,13 @@
 
     const VENDOR = 'SG';
     const LS_KEY_SCRIPT = `${VENDOR}_visitedSpotifyArtists`;
-    const BASE_CLASSNAME = `${VENDOR}_visited-artist`;
-    const CARD_VISITED_CLASSNAME = `${BASE_CLASSNAME}__card`;
-    const PLAYLIST_ROW_VISITED_CLASSNAME = `${BASE_CLASSNAME}__card`;
-    const ALL_DIMMED_CLASSES = [CARD_VISITED_CLASSNAME, PLAYLIST_ROW_VISITED_CLASSNAME];
+    const DIMMED_BASE_CN = `${VENDOR}_visited-artist`;
+    const DIMMED_CARD_CN = `${DIMMED_BASE_CN}__card`;
+    const DIMMED_PLAYLIST_ROW_CN = `${DIMMED_BASE_CN}__card`;
+    const ALL_DIMMED_CNS = [DIMMED_CARD_CN, DIMMED_PLAYLIST_ROW_CN];
     const INLINE_CSS = `
-        .${CARD_VISITED_CLASSNAME}:not(:hover),
-        .${PLAYLIST_ROW_VISITED_CLASSNAME}:not(:hover){
+        .${DIMMED_CARD_CN}:not(:hover),
+        .${DIMMED_PLAYLIST_ROW_CN}:not(:hover){
             transition: opacity 0.2s ease-in-out;
             opacity: 0.2;
         }
@@ -60,7 +60,7 @@
             const cardArtistId = labelledBy?.split(':')[2].split('-')[0];
 
             if (visited.has(cardArtistId)) {
-                card.classList.add(CARD_VISITED_CLASSNAME);
+                card.classList.add(DIMMED_CARD_CN);
             }
         });
     }
@@ -80,7 +80,7 @@
             );
 
             if (visitedAll) {
-                tracklistRow.classList.add(PLAYLIST_ROW_VISITED_CLASSNAME);
+                tracklistRow.classList.add(DIMMED_PLAYLIST_ROW_CN);
             }
         });
     }
@@ -119,11 +119,7 @@
     };
 
     function getDimmedElements() {
-        return document.querySelectorAll(
-            [CARD_VISITED_CLASSNAME, PLAYLIST_ROW_VISITED_CLASSNAME]
-                .map(classname => `.${classname}`)
-                .join(', ')
-        );
+        return document.querySelectorAll(ALL_DIMMED_CNS.map(classname => `.${classname}`).join(', '));
     }
 
     /**
@@ -131,7 +127,7 @@
      */
     function suspendDim() {
         getDimmedElements().forEach(element => {
-            element.classList.remove(...ALL_DIMMED_CLASSES);
+            element.classList.remove(...ALL_DIMMED_CNS);
         });
     }
 
@@ -176,10 +172,8 @@
             if (now - lastTapTime < DOUBLE_TAP_DELAY) {
                 scriptPaused = !scriptPaused;
                 if (scriptPaused) {
-                    console.log('[SG]', 'suspend',);
                     suspendDim();
                 } else {
-                    console.log('[SG]', 'resuy',);
                     resumeDim();
                 }
             }
