@@ -119,14 +119,11 @@
     };
 
     function getDimmedElements() {
-        const classnames = [
-            CARD_VISITED_CLASSNAME,
-            PLAYLIST_ROW_VISITED_CLASSNAME,
-        ];
-
-        const selector = classnames.map(classname => `.${classname}`).join(', ');
-
-        return document.querySelectorAll(selector);
+        return document.querySelectorAll(
+            [CARD_VISITED_CLASSNAME, PLAYLIST_ROW_VISITED_CLASSNAME]
+                .map(classname => `.${classname}`)
+                .join(', ')
+        );
     }
 
     function suspendDim() {
