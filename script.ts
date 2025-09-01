@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Darken visited artists Spotify page
 // @namespace    http://tampermonkey.net/
-// @version      1.0.5
+// @version      1.0.6
 // @description  Darken visited artists on Spotify
 // @author       Steven Gangnant
 // @match        https://open.spotify.com/*
@@ -9,43 +9,73 @@
 // @grant        none
 // ==/UserScript==
 
-// @todo Re order elements
-
 (function () {
     'use strict';
 
     const VENDOR = 'SG';
-    const LS_KEY_SCRIPT = `${VENDOR}_visitedSpotifyArtists`;
+
+    // Local storage keys
+    const LS_KEY_VISITED_ARTISTS = `${VENDOR}_visitedSpotifyArtists`;
+    const LS_KEY_IGNORED_PAGES = `${VENDOR}_ignoredPages`;
+
+    // Classnames
     const DIMMED_BASE_CN = `${VENDOR}_visited-artist`;
     const DIMMED_CARD_CN = `${DIMMED_BASE_CN}__card`;
     const DIMMED_PLAYLIST_ROW_CN = `${DIMMED_BASE_CN}__card`;
     const ALL_DIMMED_CNS = [DIMMED_CARD_CN, DIMMED_PLAYLIST_ROW_CN];
+
+    // Settings
+    const DOUBLE_TAP_DELAY = 300;
+    const DEBOUNCE_RATE = 100;
+
+    // CSS
     const INLINE_CSS = `
         .${DIMMED_CARD_CN}:not(:hover),
         .${DIMMED_PLAYLIST_ROW_CN}:not(:hover){
             transition: opacity 0.2s ease-in-out;
             opacity: 0.2;
-        }
-    `;
-    const DOUBLE_TAP_DELAY = 300;
-    const DEBOUNCE_RATE = 100;
+        }`;
 
     // State
     let scriptPaused = false;
 
-    const visitedArtists = {
-        get: () => {
-            const visited = JSON.parse(localStorage.getItem(LS_KEY_SCRIPT) || '[]');
-            return new Set(visited);
+    // API
+    const api = {
+        __LS: {
+            getArrayAsSet: key => {
+                const visited = JSON.parse(localStorage.getItem(key) || '[]');
+                return new Set(visited);
+            },
+            storeSet: (key, set) => localStorage.setItem(key, JSON.stringify([...set])),
         },
-        set: (id) => {
-            const visited = visitedArtists.get();
-            visited.add(id);
-            try {
-                localStorage.setItem(LS_KEY_SCRIPT, JSON.stringify([...visited]));
-            } catch (e) {
-                console.error(VENDOR, 'Failed storing visited artist:', e);
-            }
+        visitedArtists: {
+            get: () => api.__LS.getArrayAsSet(LS_KEY_VISITED_ARTISTS),
+            set: (id) => {
+                const visited = api.visitedArtists.get();
+                visited.add(id);
+
+                try {
+                    api.__LS.storeSet(LS_KEY_VISITED_ARTISTS, visited);
+                } catch (e) {
+                    console.error(VENDOR, 'Failed storing visited artist:', e);
+                }
+            },
+        },
+        ignoredPages: {
+            get: () => api.__LS.getArrayAsSet(LS_KEY_IGNORED_PAGES),
+            isCurrentPageIgnored: () => {
+                return api.ignoredPages.get().has(location.pathname);
+            },
+            toggleCurrentPage: () => {
+                const currentPage = location.pathname;
+                const ignoredPages = api.ignoredPages.get();
+
+                ignoredPages.has(currentPage)
+                    ? ignoredPages.delete(currentPage)
+                    : ignoredPages.add(currentPage);
+
+                api.__LS.storeSet(LS_KEY_IGNORED_PAGES, ignoredPages);
+            },
         },
     };
 
@@ -90,8 +120,8 @@
     const isPlaylistPage = () => location.pathname.includes('/playlist/');
 
     const processUI = () => {
-        if (!scriptPaused) {
-            const visited = visitedArtists.get();
+        if (!scriptPaused && !api.ignoredPages.isCurrentPageIgnored()) {
+            const visited = api.visitedArtists.get();
 
             if (isArtistPage() || isRelatedArtistsPage()) {
                 processArtistsCards(visited);
@@ -113,37 +143,43 @@
             const artistId = pathnameSections[artistPathIndex + 1];
 
             if (artistId) {
-                visitedArtists.set(artistId);
+                api.visitedArtists.set(artistId);
             }
         }
     };
-
-    function getDimmedElements() {
-        return document.querySelectorAll(ALL_DIMMED_CNS.map(classname => `.${classname}`).join(', '));
-    }
 
     /**
      * Suspend dimming - remove any dimming class
      */
     function suspendDim() {
-        getDimmedElements().forEach(element => {
-            element.classList.remove(...ALL_DIMMED_CNS);
-        });
+        document.querySelectorAll(ALL_DIMMED_CNS.map(classname => `.${classname}`).join(', '))
+            .forEach(element => {
+                element.classList.remove(...ALL_DIMMED_CNS);
+            });
     }
 
-    /**
-     * Resume dimming - retrigger UI processing
-     */
-    function resumeDim() {
-        processUI();
-    }
-
+    // Utilities functions
     function debounce(fn, delay = 100) {
         let timeout;
         return (...args) => {
             clearTimeout(timeout);
             timeout = setTimeout(() => fn(...args), delay);
         };
+    }
+
+    function doubleTapObserver(observedKeys, callback) {
+        let keyLastTapTime = 0;
+        document.addEventListener('keydown', (e) => {
+            if (observedKeys.includes(e.key)) {
+                const now = Date.now();
+
+                if (now - keyLastTapTime < DOUBLE_TAP_DELAY) {
+                    callback();
+                }
+
+                keyLastTapTime = now;
+            }
+        });
     }
 
     const runScript = debounce(
@@ -154,7 +190,7 @@
         DEBOUNCE_RATE
     );
 
-    // Create global CSS class for seen artists cards
+    // Add script global CSS stylesheet
     const scriptSheet = new CSSStyleSheet();
     scriptSheet.replaceSync(INLINE_CSS);
     document.adoptedStyleSheets = [scriptSheet];
@@ -163,24 +199,25 @@
     const observer = new MutationObserver(runScript);
     observer.observe(document.body, { childList: true, subtree: true });
 
-    // Manage script pause
-    let lastTapTime = 0;
-    document.addEventListener('keydown', (e) => {
-        if (['ControlLeft', 'ControlRight'].includes(e.code)) {
-            const now = Date.now();
-
-            if (now - lastTapTime < DOUBLE_TAP_DELAY) {
-                scriptPaused = !scriptPaused;
-                if (scriptPaused) {
-                    suspendDim();
-                } else {
-                    resumeDim();
-                }
-            }
-
-            lastTapTime = now;
+    // Keyboard shortcut observers
+    doubleTapObserver(
+        'Control',
+        () => {
+            scriptPaused = !scriptPaused;
+            scriptPaused
+                ? suspendDim()
+                : processUI();
         }
-    });
+    );
+
+    doubleTapObserver(
+        'Shift',
+        () => {
+            api.ignoredPages.toggleCurrentPage();
+            suspendDim();
+            processUI();
+        }
+    );
 
     // Also run on first load
     runScript();
