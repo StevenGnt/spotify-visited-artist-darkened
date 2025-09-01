@@ -13,7 +13,7 @@ It **only works once you've installed the script**, and it **resets when you cle
 # How to use
 - Visited pages automatically detected
 - Double tap "Ctrl" to toggle the dimming on/off
-- Double tap "Shift" to toggle the dimming on/off for a certain page (kept in memory)
+- Double tap "Shift" to permenantly toggle the dimming on/off for the current page
 
 # Install example
 
